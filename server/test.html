@@ -1,0 +1,37 @@
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script>
+    var player = getParam('player');
+    var socket = io.connect('http://localhost:3000/');
+
+    socket.on('connect', function () {
+        console.log('Connected!')
+        socket.emit('new_player', player, function(data) {
+            console.log(data);
+        });
+    });
+ 
+    socket.on('message', function (msg) {
+        console.log(msg);
+    });
+
+    function msg(msg) {
+        if (socket.socket.connected === true) {
+            socket.emit('chat', msg);
+            return player + ': ' + msg;
+        } else {
+            console.warn("You're not connected!");
+            return false;
+        }
+    }
+
+    function getParam(name) {
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+        var regexS = "[\\?&]" + name + "=([^&#]*)";
+        var regex = new RegExp(regexS);
+        var results = regex.exec(window.location.href);
+        if(results == null)
+            return "";
+        else
+            return decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+</script>
