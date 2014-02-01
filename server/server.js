@@ -10,7 +10,7 @@ io.sockets.on('connection', function (socket) {
         player = p;
 
         socket.broadcast.send('--> ' + p + ' has joined');
-        fn('MAFIAjs\n==========\nWelcome ' + player + '!\nThere are '+ numPlayer +' other people here.');
+        fn('Welcome ' + player + '! There are '+ numPlayer +' other people here.');
         numPlayer++;
     });
 
