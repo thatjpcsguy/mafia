@@ -1,8 +1,9 @@
 var io = require('socket.io').listen(3000);
 var numPlayer = 0;
+var players = {};
 
 io.sockets.on('connection', function (socket) {
-    var player = ''; 
+    var player = '';
 
     socket.on('new_player', function(p, fn) {
         console.log('new player = ' + p);
@@ -15,7 +16,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('chat', function(msg, fn) {
         socket.broadcast.send(player + ': ' + msg);
-    });  
+    });
 
     socket.on('message', function (msg) {
         console.log(msg);
