@@ -6,7 +6,6 @@ io.sockets.on('connection', function (socket) {
     var player = '';
 
     socket.on('new_player', function(p, fn) {
-        console.log('new player = ' + p);
         player = p;
 
         socket.broadcast.send('--> ' + p + ' has joined');
