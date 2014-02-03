@@ -16,6 +16,12 @@
                 padding-top: 50px;
                 padding-bottom: 20px;
             }
+            td.username {
+                width: 100px;
+            }
+            td.icon {
+                width: 24px;
+            }
         </style>
         <link rel="stylesheet" href="css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="css/main.css">
@@ -52,38 +58,61 @@
 </html>
 
 <script>
-    var player = getParam('player');
+    var user = {};
+    user.name = getParam('name');
+
+    while (user.name.length === 0) {
+        user.name = prompt('Please enter your name:', '');
+    }
+
     var socket = io.connect('http://localhost:3000/');
 
     socket.on('connect', function () {
         addToChatMessage('Connected!', 'glyphicon-ok', 'success');
+        socket.emit('new_user', user.name);
 
-        socket.emit('new_player', player, function(data) {
-            addToChatMessage(data, 'glyphicon-info-sign', 'info');
+        socket.on('event_msg', function(data) {
+            console.log(data);
+            data = JSON.parse(data);
+            addToChatMessage(data.msg, data.icon, data.type);
+        });
+
+        jQuery('#message').keyup(function(e) {
+            var keyCode = e.which;
+            if (keyCode === 13 && socket.socket.connected === true) {
+                socket.emit('chat', jQuery(this).val());
+                jQuery(this).val('');
+            }
         });
     });
 
-    socket.on('message', function (msg) {
-        addToChatMessage(msg);
-    });
-
-    jQuery('#message').keyup(function(e) {
-        e.preventDefault();
-        var keyCode = e.which;
-        if (keyCode === 13 && socket.socket.connected === true) {
-            socket.emit('chat', jQuery(this).val());
-            jQuery(this).val('');
-        }
+    socket.on('disconnect', function () {
+        addToChatMessage('Disconnected.', 'glyphicon-remove', 'danger');
+        socket.removeListener();
     });
 
     function msg(msg) {
         if (socket.socket.connected === true) {
             socket.emit('chat', msg);
-            return player + ': ' + msg;
+            return user.name + ': ' + msg;
         } else {
             console.warn("You're not connected!");
             return false;
         }
+    }
+
+    function addToChatMessage(msg, icon, type) {
+        if (typeof msg === 'undefined') {
+            return false;
+        }
+        if (typeof icon === 'undefined') {
+            icon = 'glyphicon-comment';
+        }
+        if (typeof type === 'undefined') {
+            type = '';
+        }
+        jQuery('#chat-messages').append('<tr class="' + type + '"><td class="icon"><span class="glyphicon ' + icon + '"></span></td><td>' + msg + '</td></tr>');
+        window.scrollTo(0,document.body.scrollHeight);
     }
 
     function getParam(name) {
@@ -97,17 +126,4 @@
             return decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
-    function addToChatMessage(msg, icon, type) {
-        if (typeof msg === 'undefined') {
-            return false;
-        }
-        if (typeof icon === 'undefined') {
-            icon = 'glyphicon-comment';
-        }
-        if (typeof type === 'undefined') {
-            type = '';
-        }
-        jQuery('#chat-messages').append('<tr class="' + type + '"><td><span class="glyphicon ' + icon + '"></span></td><td>' + msg + '</td></tr>');
-        window.scrollTo(0,document.body.scrollHeight);
-    }
 </script>
