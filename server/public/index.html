@@ -6,7 +6,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title></title>
+        <title>The Resistance: Avalon</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width">
 
@@ -35,95 +35,31 @@
       <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
           <div class="navbar-header">
-            <a class="navbar-brand" href="#">Mafia</a>
+            <a class="navbar-brand" href="#">The Resistance: Avalon</a>
           </div>
         </div>
       </div>
 
-      <table id="chat-messages" class="table table-condensed" style="margin-bottom: 34px;">
-      </table>
+      <table id="chat-messages" class="table table-condensed" style="bottom: 0px; position: fixed;"></table>
 
       <div class="navbar navbar-inverse navbar-fixed-bottom">
-        <div class="container" style="padding-top: 8px;">
+        <div class="container" style="padding: 8px 0 8px;">
+            <div id="voting" class="alert alert-warning" style="display:none;">
+                <span></span>
+                <button type="button" class="btn btn-success"><span class="glyphicon glyphicon-thumbs-up"></span></button>
+                <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-thumbs-down"></span></button>
+            </div>
+            <div id="teamlead" class="alert alert-info" style="display:none;">
+                <span>You're the <strong>leader</strong> for this round, <strong>choose a team</strong> to go on the <strong>mission</strong>:</span><br>
+                <div class="btn-group" data-toggle="buttons"></div>
+            </div>
             <input id="message" type="text" class="form-control" style="width: 100%;" autocomplete="off" placeholder="Type a message here..">
         </div>
       </div>
-    </div> <!-- /container -->
-        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.1.min.js"><\/script>')</script>
-
+    </div>
+        <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+        <script src="js/vendor/jquery-1.10.1.min.js"></script>
         <script src="js/vendor/bootstrap.min.js"></script>
         <script src="js/main.js"></script>
-        <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     </body>
 </html>
-
-<script>
-    var user = {};
-    user.name = getParam('name');
-
-    while (user.name.length === 0) {
-        user.name = prompt('Please enter your name:', '');
-    }
-
-    var socket = io.connect('http://localhost:3000/');
-
-    socket.on('connect', function () {
-        addToChatMessage('Connected!', 'glyphicon-ok', 'success');
-        socket.emit('new_user', user.name);
-
-        socket.on('event_msg', function(data) {
-            console.log(data);
-            data = JSON.parse(data);
-            addToChatMessage(data.msg, data.icon, data.type);
-        });
-
-        jQuery('#message').keyup(function(e) {
-            var keyCode = e.which;
-            if (keyCode === 13 && socket.socket.connected === true) {
-                socket.emit('chat', jQuery(this).val());
-                jQuery(this).val('');
-            }
-        });
-    });
-
-    socket.on('disconnect', function () {
-        addToChatMessage('Disconnected.', 'glyphicon-remove', 'danger');
-        socket.removeListener();
-    });
-
-    function msg(msg) {
-        if (socket.socket.connected === true) {
-            socket.emit('chat', msg);
-            return user.name + ': ' + msg;
-        } else {
-            console.warn("You're not connected!");
-            return false;
-        }
-    }
-
-    function addToChatMessage(msg, icon, type) {
-        if (typeof msg === 'undefined') {
-            return false;
-        }
-        if (typeof icon === 'undefined') {
-            icon = 'glyphicon-comment';
-        }
-        if (typeof type === 'undefined') {
-            type = '';
-        }
-        jQuery('#chat-messages').append('<tr class="' + type + '"><td class="icon"><span class="glyphicon ' + icon + '"></span></td><td>' + msg + '</td></tr>');
-        window.scrollTo(0,document.body.scrollHeight);
-    }
-
-    function getParam(name) {
-        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-        var regexS = "[\\?&]" + name + "=([^&#]*)";
-        var regex = new RegExp(regexS);
-        var results = regex.exec(window.location.href);
-        if(results == null)
-            return "";
-        else
-            return decodeURIComponent(results[1].replace(/\+/g, " "));
-    }
-
-</script>

@@ -100,14 +100,14 @@ io.sockets.on('connection', function (socket) {
             msg: name + ' has left'
         }));
 
-        users[name].online = false;
+        //users[name].online = false;
 
-        if (getOnlineUserCount() < 3) {
-            for (var name in users) {
-                if (users[name].online === false) {
+        //if (getOnlineUserCount() < 3) {
+       //     for (var name in users) {
+        //        if (users[name].online === false) {
                     delete users[name];
-                }
-            }
+        //        }
+        //    }
 
             cleanUpGame();
             sendMessageToAllUsers(
@@ -115,7 +115,7 @@ io.sockets.on('connection', function (socket) {
                 'glyphicon-remove',
                 'Game cancelled due to too many player disconnecting..'
             );
-        }
+       // }
     });
 });
 
@@ -186,6 +186,9 @@ function assignLeader() {
         'glyphicon-info-sign',
         'The order of leadership is as follows: ' + leadershipOrder.join(' -> ')
     );
+
+    sendTeamLeaderChooser(leadershipOrder[leader]);
+    //sendVoteToAllUsers('<strong>JoeBloggs</strong> has decided to take <strong>you</strong>, <strong>George</strong> and <strong>themselves</strong>.');
 }
 
 function User(s) {
@@ -230,6 +233,26 @@ function sendMessageToSpecificUser(name, type, icon, msg) {
     users[name].socket.emit('event_msg', JSON.stringify({
         type: type,
         icon: icon,
+        msg: msg
+    }));
+}
+
+function sendTeamLeaderChooser(name) {
+    users[name].socket.emit('teamlead_msg', JSON.stringify({
+        names: shuffle(Object.keys(users))
+    }));
+}
+
+function sendVoteToAllUsers(msg) {
+    for (var name in users) {
+        if (users[name].characterId !== null) {
+            sendVoteToSpecificUser(name, msg);
+        }
+    };
+}
+
+function sendVoteToSpecificUser(name, msg) {
+    users[name].socket.emit('vote_msg', JSON.stringify({
         msg: msg
     }));
 }
