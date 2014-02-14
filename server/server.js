@@ -1,6 +1,6 @@
 var io = require('socket.io').listen(3000);
 var users = {};
-var gameInProgress = false;
+
 var characters = {
     1: {
         name: 'Loyal Servant of Arthur',
@@ -59,8 +59,17 @@ var charactersInGame = {
     5: [1, 2, 3, 4, 5]
 };
 
-var leader = 0;
-var leadershipOrder = null;
+var charactersInRound = {
+    5: [2, 3, 2, 3, 3]
+}
+
+var game = {
+    leader: 0,
+    leadershipOrder: null,
+    round: 0,
+    inProgress: false
+}
+
 var startGameInterval = setInterval(checkGameStart, 10000);
 
 
@@ -82,7 +91,7 @@ io.sockets.on('connection', function (socket) {
             msg: name + ' has joined'
         }));
 
-        if (gameInProgress === false) {
+        if (game.inProgress === false) {
             clearInterval(startGameInterval);
             checkGameStart();
             startGameInterval = setInterval(checkGameStart, 10000);
@@ -90,8 +99,36 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('chat', function(msg, fn) {
-        socket.broadcast.send(name + ': ' + msg);
+        socket.broadcast.emit('chat', JSON.stringify({
+            name: name,
+            msg: msg
+        }));
     });
+
+    socket.on('team_select', function(data, fn) {
+        if (game.leadershipOrder[game.leader] === name) {
+            data = JSON.parse(data);
+            if (data.length === charactersInRound[Object.keys(users).length][game.round - 1]) {
+                sendMessageToAllUsers(
+                    'info',
+                    'glyphicon-info-sign',
+                    name + ' has chosen who will go on the mission.'
+                );
+                sendVoteToAllUsers(
+                    name + ' has selected the following players to go on this mission: ' + data.join(', ')
+                );
+            } else {
+                sendMessageToSpecificUser(
+                    name,
+                    'danger',
+                    'glyphicon-remove',
+                    'You must select ' + charactersInRound[Object.keys(users).length][game.round - 1] + ' players to go on the mission.'
+                );
+            }
+        }
+    });
+
+
 
     socket.on('disconnect', function () {
         socket.broadcast.emit('event_msg', JSON.stringify({
@@ -137,7 +174,7 @@ function checkGameStart() {
 }
 
 function cleanUpGame() {
-    gameInProgress = false;
+    game.inProgress = false;
     for (var name in users) {
         users[name].characterId = null;
     };
@@ -145,7 +182,7 @@ function cleanUpGame() {
 
 function assignCharacters() {
     clearInterval(startGameInterval);
-    gameInProgress = true;
+    game.inProgress = true;
 
     sendMessageToAllUsers(
         'info',
@@ -174,21 +211,17 @@ function assignCharacters() {
         );
     };
 
-    setTimeout(assignLeader, 3000);
-}
-
-function assignLeader() {
-    leader = 0;
-    leadershipOrder = shuffle(Object.keys(users));
+    game.round = 1;
+    game.leader = 0;
+    game.leadershipOrder = shuffle(Object.keys(users));
 
     sendMessageToAllUsers(
         'info',
         'glyphicon-info-sign',
-        'The order of leadership is as follows: ' + leadershipOrder.join(' -> ')
+        'The order of leadership is as follows: ' + game.leadershipOrder.join(' -> ')
     );
 
-    sendTeamLeaderChooser(leadershipOrder[leader]);
-    //sendVoteToAllUsers('<strong>JoeBloggs</strong> has decided to take <strong>you</strong>, <strong>George</strong> and <strong>themselves</strong>.');
+    sendTeamLeaderChooser(game.leadershipOrder[game.leader]);
 }
 
 function User(s) {
@@ -241,6 +274,12 @@ function sendTeamLeaderChooser(name) {
     users[name].socket.emit('teamlead_msg', JSON.stringify({
         names: shuffle(Object.keys(users))
     }));
+
+    sendMessageToAllUsers(
+        'info',
+        'glyphicon-info-sign',
+        name + ' is now choosing ' + charactersInRound[Object.keys(users).length][game.round - 1] + ' people to go on the mission.'
+    );
 }
 
 function sendVoteToAllUsers(msg) {

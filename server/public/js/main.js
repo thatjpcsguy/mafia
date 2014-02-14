@@ -12,18 +12,16 @@ socket.on('connect', function () {
     socket.emit('new_user', user.name);
 
     socket.on('event_msg', function(data) {
-        console.log(data);
         data = JSON.parse(data);
         addToChatMessage(data.msg, data.icon, data.type);
     });
 
     socket.on('teamlead_msg', function(data) {
-        console.log(data);
         data = JSON.parse(data);
 
         jQuery('#teamlead > .btn-group').html('');
         for (var i = 0; i < data['names'].length; i++) {
-            jQuery('#teamlead > .btn-group').append('<label class="btn btn-primary"><input type="checkbox">' + data['names'][i] +'</label>');
+            jQuery('#teamlead > .btn-group').append('<label class="btn btn-primary"><input type="checkbox" value="' + data['names'][i] + '">' + data['names'][i] +'</label>');
         }
 
         jQuery('#teamlead').show();
@@ -31,9 +29,9 @@ socket.on('connect', function () {
     });
 
     socket.on('vote_msg', function(data) {
-        console.log(data);
         data = JSON.parse(data);
         jQuery('#voting > span').html(data.msg);
+        jQuery('#teamlead').hide();
         jQuery('#voting').show();
         fixChatWindowHeight();
     });
@@ -42,8 +40,23 @@ socket.on('connect', function () {
         var keyCode = e.which;
         if (keyCode === 13 && socket.socket.connected === true) {
             socket.emit('chat', jQuery(this).val());
+            addToChatMessage('<b>' + user.name + '</b>: ' + jQuery(this).val());
             jQuery(this).val('');
         }
+    });
+
+    socket.on('chat', function(data) {
+        console.log(data);
+        data = JSON.parse(data);
+        addToChatMessage('<b>' + data.name + '</b>: ' + data.msg);
+    });
+
+    jQuery('#team-select').click(function() {
+        var team_select = [];
+        jQuery('#teamlead .btn-group :checked').each(function() {
+            team_select.push($(this).val());
+        });
+        socket.emit('team_select', JSON.stringify(team_select));
     });
 });
 
